@@ -121,12 +121,14 @@
         },
         tutorial_agg: {
             form: null,
-            sim: '/states-of-matter-basics/?locale=de',
+            sim: '/states-of-matter-basics/',
+            locale: 'de',
             redirect: '/?scenario=agg'
         },
         tutorial_gas: {
             form: null,
-            sim: '/gas-properties/?locale=de',
+            sim: '/gas-properties/',
+            locale: 'de',
             redirect: '/?scenario=gas'
         }
     };
@@ -139,20 +141,27 @@
     const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
 
-    // Show form if present
+    // Show/hide form
     if (config.form) {
         formFrame.src = config.form;
     } else {
         layout.classList.add('full-width');
     }
 
-    // Load sim directly (no iframe)
+    // Load sim HTML directly (not in iframe)
+    const simPath = config.sim + 'index.html' + (config.locale ? `?locale=${config.locale}` : '');
     simContainer.innerHTML += '<p style="padding:1rem;">Loading simulation…</p>';
-    fetch(config.sim + 'index.html')
-        .then(res => res.text())
+    fetch(simPath)
+        .then(res => {
+            if (!res.ok) throw new Error('Sim not found');
+            return res.text();
+        })
         .then(html => {
             simContainer.innerHTML = html;
-            if (window.reSdk) window.reSdk.startNextExposure?.();
+            window.reSdk?.startNextExposure?.();
+        })
+        .catch(err => {
+            simContainer.innerHTML = `<p style="padding:1rem; color: red;">Failed to load simulation: ${err.message}</p>`;
         });
 
     // Tutorial overlay logic
@@ -176,12 +185,13 @@
         requestFullscreen?.call(elem);
     });
 
-    // Eye-tracking: finish
+    // End test
     document.getElementById('endTestBtn').addEventListener('click', () => {
         window.reSdk?.finishEyeTrackingTest?.();
         window.opener?.postMessage('re-test-end-without-interaction', '*');
     });
 
+    // Auto-finish on tab close/hidden
     window.addEventListener('beforeunload', () => {
         window.opener?.postMessage('re-test-end-without-interaction', '*');
     });
