@@ -12,23 +12,21 @@ export interface ScenarioConfig {
 const scenarios: Record<string, ScenarioConfig> = {
     agg: {
         sim: '/states-of-matter-basics/',
-        form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
+        form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true'
     },
     gas: {
         sim: '/gas-properties/',
-        form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
+        form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true'
     },
     tutorial_agg: {
         sim: '/states-of-matter-basics/',
         form: null,
-        redirect: '/?scenario=agg',
-        locale: 'de',
+        redirect: '/?scenario=agg'
     },
     tutorial_gas: {
         sim: '/gas-properties/',
         form: null,
-        redirect: '/?scenario=gas',
-        locale: 'de',
+        redirect: '/?scenario=gas'
     }
 };
 
@@ -39,7 +37,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const s = params.get('scenario') || 'tutorial_gas';
-        const selectedConfig = scenarios[s] || scenarios.tutorial_gas;
+        const selectedConfig = scenarios[s] || scenarios['tutorial_gas'];
 
         console.log('[App] Selected scenario:', s);
         console.log('[App] Config:', selectedConfig);
@@ -47,74 +45,57 @@ const App: React.FC = () => {
         setScenario(s);
         setConfig(selectedConfig);
 
-        // Auto-end test on unload or tab hidden
-        const endTest = () => {
-            window.opener?.postMessage('re-test-end-without-interaction', '*');
-            console.log('[App] Test end triggered');
-        };
-
-        window.addEventListener('beforeunload', endTest);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') endTest();
-        });
-
-        // Auto redirect after 5 mins in tutorial
+        // Auto redirect after 5 mins (only in tutorial mode)
         if (s.startsWith('tutorial_') && selectedConfig.redirect) {
-            const timeout = setTimeout(() => {
-                console.log('[App] Redirecting after tutorial timeout');
+            setTimeout(() => {
+                console.log('[App] Auto redirecting after tutorial timeout...');
                 window.location.href = selectedConfig.redirect!;
             }, 5 * 60 * 1000);
-            return () => clearTimeout(timeout);
         }
-
-        return () => {
-            window.removeEventListener('beforeunload', endTest);
-        };
     }, []);
 
     const handleFinishTutorial = () => {
-        console.log('[App] Finish Tutorial → Redirect');
+        console.log('[App] Finish tutorial clicked');
         if (config?.redirect) {
+            console.log('[App] Redirecting to', config.redirect);
             window.location.href = config.redirect;
+        } else {
+            console.warn('[App] No redirect set in config');
         }
     };
 
-    if (!config) return <p>Loading...</p>;
+    if (!config) return <p>Loading config...</p>;
 
     const simPath = `${config.sim}index.html${config.locale ? `?locale=${config.locale}` : ''}`;
-    const isTutorial = !config.form;
 
     return (
-        <div className={`app ${isTutorial ? 'tutorial-mode' : ''}`}>
+        <div className={`app ${!config.form ? 'tutorial-mode' : ''}`}>
             <div className="toolbar">
-                <button onClick={() => document.documentElement.requestFullscreen()}>
-                    Full Screen
-                </button>
-                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>
-                    End Test
-                </button>
+                <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
+                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>End Test</button>
             </div>
 
-            <div className={`container ${isTutorial ? 'full-width' : ''}`}>
-                {!isTutorial && (
+            {config.form ? (
+                <div className="container">
                     <div className="left-panel">
-                        <iframe src={config.form!} title="Google Form" />
+                        <iframe src={config.form} title="Google Form" />
                     </div>
-                )}
-                <div className="right-panel">
-                    <SimulationLoader path={simPath} />
-
-                    {isTutorial && (
-                        <div id="tutorialInfo">
+                    <div className="right-panel">
+                        <SimulationLoader path={simPath} />
+                    </div>
+                </div>
+            ) : (
+                <div className="container full-width">
+                    <div className="right-panel">
+                        <div className="tutorial-overlay" id="tutorialInfo">
                             <strong>Tutorial Mode</strong> – Explore the simulation.
                             <br />
-                            <button id="finishTutorialButton" onClick={handleFinishTutorial}>
-                                Finish Tutorial
-                            </button>
+                            <button onClick={handleFinishTutorial}>Finish Tutorial</button>
                         </div>
-                    )}
+                        <SimulationLoader path={simPath} />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
