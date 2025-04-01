@@ -212,19 +212,37 @@
     // Tutorial overlay
     if (selected.startsWith('tutorial_')) {
         document.body.classList.add('tutorial-mode');
+
+        // Show the tutorial overlay
         const tutorialInfo = document.getElementById('tutorialInfo');
-        tutorialInfo.style.display = 'block';
+        if (tutorialInfo) {
+            tutorialInfo.style.display = 'block';
+            console.log('[App] Tutorial mode activated, overlay shown');
+        } else {
+            console.warn('[App] tutorialInfo element not found');
+        }
 
-        document.getElementById('finishTutorialButton').addEventListener('click', () => {
-            console.log('[App] Tutorial finished manually');
-            window.location.href = config.redirect;
-        });
+        // Attach click listener for "Finish Tutorial"
+        setTimeout(() => {
+            const finishButton = document.getElementById('finishTutorialButton');
+            if (finishButton) {
+                finishButton.addEventListener('click', () => {
+                    console.log('[App] Tutorial finished manually');
+                    window.location.href = config.redirect;
+                });
+                console.log('[App] Finish button listener attached');
+            } else {
+                console.warn('[App] Finish button not found');
+            }
+        }, 100); // slight delay ensures DOM is fully ready
 
+        // Auto redirect after 5 minutes
         setTimeout(() => {
             console.log('[App] Tutorial auto-redirect triggered');
             window.location.href = config.redirect;
         }, 5 * 60 * 1000);
     }
+
 
     // Fullscreen
     document.getElementById('fullscreenBtn').addEventListener('click', () => {
