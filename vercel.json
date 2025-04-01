@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/states-of-matter-basics", "destination": "/states-of-matter-basics/index.html" },
+    { "source": "/gas-properties", "destination": "/gas-properties/index.html" },
+    { "source": "/states-of-matter-basics/", "destination": "/states-of-matter-basics/index.html" },
+    { "source": "/gas-properties/", "destination": "/gas-properties/index.html" }
+  ]
+}
