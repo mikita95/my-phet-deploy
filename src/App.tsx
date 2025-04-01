@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SimulationLoader from './components/SimulationLoader';
+import './app.css';
 
 export interface ScenarioConfig {
     sim: string;
@@ -8,7 +9,7 @@ export interface ScenarioConfig {
     locale?: string;
 }
 
-const scenarios: Record<string, ScenarioConfig> = {
+export const scenarios: Record<string, ScenarioConfig> = {
     agg: {
         sim: '/states-of-matter-basics/',
         form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true'
@@ -30,53 +31,66 @@ const scenarios: Record<string, ScenarioConfig> = {
 };
 
 const App: React.FC = () => {
-    const [config, setConfig] = useState<ScenarioConfig | null>(null);
+    const initialScenario = new URLSearchParams(window.location.search).get('scenario') || 'tutorial_gas';
+    const [scenario] = useState<string>(initialScenario);
+    const config = scenarios[scenario] || scenarios['tutorial_gas'];
 
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const scenario = params.get('scenario') || 'tutorial_gas';
-        const selected = scenarios[scenario] || scenarios['tutorial_gas'];
-        setConfig(selected);
+        console.log('[App] Selected scenario:', scenario);
+        console.log('[App] Config:', config);
 
-        if (scenario.startsWith('tutorial_') && selected.redirect) {
+        if (scenario.startsWith('tutorial_') && config.redirect) {
             setTimeout(() => {
-                window.location.href = selected.redirect!;
+                console.log('[App] Auto redirect after tutorial timeout');
+                window.location.href = config.redirect!;
             }, 5 * 60 * 1000);
         }
-    }, []);
+    }, [scenario]);
 
-    const handleFinish = () => {
-        if (config?.redirect) {
+    const handleFinishTutorial = () => {
+        console.log('[App] Manual tutorial finish clicked');
+        if (config.redirect) {
             window.location.href = config.redirect;
         }
     };
 
-    if (!config) return <p>Loading...</p>;
-
     const simPath = `${config.sim}index.html${config.locale ? `?locale=${config.locale}` : ''}`;
+    const isTutorial = scenario.startsWith('tutorial_');
 
     return (
-        <div className="app">
+        <div className={`app ${isTutorial ? 'tutorial-mode' : ''}`}>
             <div className="toolbar">
-                <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
-                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>End Test</button>
+                <button onClick={() => document.documentElement.requestFullscreen()}>
+                    Full Screen
+                </button>
+                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>
+                    End Test
+                </button>
             </div>
 
-            {config.form && (
-                <div className="form-panel">
-                    <iframe src={config.form} title="Google Form" />
+            {isTutorial && (
+                <div className="tutorial-bar" data-re-aoi-name="Tutorial Info">
+                    <strong>Tutorial Mode</strong> — Explore the simulation.
+                    <button onClick={handleFinishTutorial}>Finish Tutorial</button>
                 </div>
             )}
 
-            {!config.form && (
-                <div className="tutorial-info">
-                    <strong>Tutorial Mode</strong> – Explore the simulation.
-                    <br />
-                    <button onClick={handleFinish}>Finish Tutorial</button>
+            {config.form ? (
+                <div className="container">
+                    <div className="left-panel">
+                        <iframe src={config.form} title="Google Form" className="form-frame" />
+                    </div>
+                    <div className="right-panel">
+                        <SimulationLoader path={simPath} />
+                    </div>
+                </div>
+            ) : (
+                <div className="container full-width">
+                    <div className="right-panel">
+                        <SimulationLoader path={simPath} />
+                    </div>
                 </div>
             )}
-
-            <SimulationLoader path={simPath} />
         </div>
     );
 };
