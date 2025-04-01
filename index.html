@@ -43,7 +43,7 @@
         .right-panel {
             width: 75%;
             position: relative;
-            overflow: auto;
+            overflow: hidden;
         }
         .full-width .left-panel {
             display: none;
@@ -59,8 +59,13 @@
         #simContainer {
             width: 100%;
             height: 100%;
+            position: relative;
         }
-
+        #simWrapper {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
         #tutorialInfo {
             position: absolute;
             top: 10px;
@@ -86,10 +91,6 @@
             color: white;
             cursor: pointer;
         }
-
-        #simContent {
-            pointer-events: none;
-        }
     </style>
 
     <!-- RealEye SDK -->
@@ -112,12 +113,13 @@
     </div>
     <div class="right-panel">
         <div id="simContainer" data-re-aoi-name="Simulation">
-            <p style="padding:1rem;">Loading simulation…</p>
-        </div>
-        <div id="tutorialInfo">
-            <strong>Tutorial Mode</strong> – Explore the simulation.
-            <br />
-            <button id="finishTutorialButton">Finish Tutorial</button>
+            <div id="simWrapper">
+                <p style="padding:1rem;">Loading simulation…</p>
+            </div>
+            <div id="tutorialInfo">
+                <strong>Tutorial Mode</strong> – Explore the simulation.<br />
+                <button id="finishTutorialButton">Finish Tutorial</button>
+            </div>
         </div>
     </div>
 </div>
@@ -154,8 +156,9 @@
     console.log('[App] Config:', config);
 
     const formFrame = document.getElementById('googleForm');
-    const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
+    const simWrapper = document.getElementById('simWrapper');
+    const tutorialInfo = document.getElementById('tutorialInfo');
 
     if (config.form) {
         formFrame.src = config.form;
@@ -174,12 +177,7 @@
 
             const wrapper = document.createElement('div');
             wrapper.innerHTML = bodyContent;
-            wrapper.id = 'simContent';
             wrapper.style.pointerEvents = 'none';
-
-            simContainer.innerHTML = '';
-            simContainer.appendChild(wrapper);
-
             wrapper.querySelectorAll('script').forEach(oldScript => {
                 const newScript = document.createElement('script');
                 [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
@@ -187,38 +185,30 @@
                 oldScript.replaceWith(newScript);
             });
 
+            simWrapper.innerHTML = '';
+            simWrapper.appendChild(wrapper);
+
             console.log('[App] Sim loaded and scripts executed');
             window.reSdk?.startNextExposure?.();
             setupTutorial();
         })
         .catch(err => {
             console.error('[App] Failed to load simulation:', err);
-            simContainer.innerHTML = `<p style="padding:1rem; color:red;">Failed to load simulation: ${err.message}</p>`;
+            simWrapper.innerHTML = `<p style="padding:1rem; color:red;">Failed to load simulation: ${err.message}</p>`;
         });
 
     function setupTutorial() {
         if (!selected.startsWith('tutorial_')) return;
-
-        document.body.classList.add('tutorial-mode');
-        const tutorialInfo = document.getElementById('tutorialInfo');
         tutorialInfo.style.display = 'block';
         console.log('[App] Tutorial mode activated');
 
-        setTimeout(() => {
-            const finishButton = document.getElementById('finishTutorialButton');
-            if (!finishButton) {
-                console.warn('[App] Finish button not found!');
-                return;
-            }
-
+        const finishButton = document.getElementById('finishTutorialButton');
+        if (finishButton) {
             finishButton.addEventListener('click', () => {
-                console.log('[App] Tutorial finished manually');
-                console.log('[App] Redirecting to:', config.redirect);
+                console.log('[App] Tutorial finished manually, redirecting to:', config.redirect);
                 window.location.href = config.redirect;
             });
-
-            console.log('[App] Finish button listener attached');
-        }, 100);
+        }
 
         setTimeout(() => {
             console.log('[App] Tutorial auto-redirect triggered');
