@@ -60,6 +60,7 @@ const App: React.FC = () => {
     }, []);
 
     const handleFinishTutorial = () => {
+        console.log('[App] Tutorial finished, redirecting');
         if (config?.redirect) {
             window.location.href = config.redirect;
         }
