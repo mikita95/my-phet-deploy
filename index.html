@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>PhET Simulation + Google Form</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"/>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
         html, body {
             margin: 0;
             padding: 0;
@@ -16,12 +19,14 @@
             display: flex;
             flex-direction: column;
         }
+
         .toolbar {
             padding: 8px;
             background: #f1f3f5;
             text-align: right;
             border-bottom: 1px solid #ddd;
         }
+
         .toolbar button {
             padding: 8px 14px;
             font-size: 14px;
@@ -32,30 +37,37 @@
             cursor: pointer;
             margin-left: 8px;
         }
+
         .container {
             flex: 1;
             display: flex;
             position: relative;
         }
+
         .left-panel {
             width: 25%;
             border-right: 1px solid #ccc;
         }
+
         .right-panel {
             width: 75%;
             overflow: auto;
         }
+
         .full-width .left-panel {
             display: none;
         }
+
         .full-width .right-panel {
             width: 100%;
         }
+
         iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
+
         #tutorialInfo {
             position: absolute;
             top: 10px;
@@ -70,6 +82,7 @@
             display: none;
             text-align: center;
         }
+
         #tutorialInfo button {
             margin-top: 8px;
             padding: 6px 12px;
@@ -85,6 +98,7 @@
     <!-- RealEye SDK -->
     <script type="module">
         import EmbeddedPageSdk from "https://app.realeye.io/sdk/js/testRunnerEmbeddableSdk-1.7.1.js";
+
         window.addEventListener("DOMContentLoaded", () => {
             window.reSdk = new EmbeddedPageSdk(false, null, false);
         });
@@ -105,7 +119,7 @@
     </div>
     <div id="tutorialInfo">
         <strong>Tutorial Mode</strong> – Explore the simulation.
-        <br />
+        <br/>
         <button id="finishTutorialButton">Finish Tutorial</button>
     </div>
 </div>
@@ -114,11 +128,11 @@
     const scenarios = {
         agg: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
-            sim:  '/states-of-matter-basics/',
+            sim: '/states-of-matter-basics/',
         },
         gas: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
-            sim:  '/gas-properties/',
+            sim: '/gas-properties/',
         },
         tutorial_agg: {
             form: null,
@@ -162,17 +176,23 @@
             return res.text();
         })
         .then(html => {
-            simContainer.innerHTML = html;
+            // Extract only <body> content from sim HTML
+            const bodyMatch = html.match(/<body[^>]*>((.|[\n\r])*)<\/body>/im);
+            const bodyContent = bodyMatch ? bodyMatch[1] : html;
 
-            // Force execution of inline scripts
+            // Inject body content only — avoids replacing our app layout
+            simContainer.innerHTML = bodyContent;
+
+            // Execute scripts manually
             simContainer.querySelectorAll('script').forEach(oldScript => {
                 const newScript = document.createElement('script');
                 [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
                 newScript.textContent = oldScript.textContent;
+                oldScript.type = 'text/plain'; // prevent accidental re-execution
                 oldScript.replaceWith(newScript);
             });
 
-            console.log('[App] Sim loaded and scripts executed');
+            console.log('[App] Sim loaded and scripts executed (body only)');
             window.reSdk?.startNextExposure?.();
         })
         .catch(err => {
