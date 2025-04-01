@@ -1,8 +1,23 @@
 {
-  "rewrites": [
-    { "source": "/states-of-matter-basics", "destination": "/states-of-matter-basics/index.html" },
-    { "source": "/gas-properties", "destination": "/gas-properties/index.html" },
-    { "source": "/states-of-matter-basics/", "destination": "/states-of-matter-basics/index.html" },
-    { "source": "/gas-properties/", "destination": "/gas-properties/index.html" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "vite.config.ts",
+      "use": "@vercel/vite"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/states-of-matter-basics(/.*)?",
+      "dest": "/states-of-matter-basics/index.html"
+    },
+    {
+      "src": "/gas-properties(/.*)?",
+      "dest": "/gas-properties/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
