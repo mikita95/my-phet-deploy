@@ -1,41 +1,60 @@
 import React, { useEffect, useState } from 'react';
-import { scenarios, ScenarioConfig } from './utils/scenarioConfig';
 import SimulationLoader from './components/SimulationLoader';
-import GoogleForm from './components/GoogleForm';
-import TutorialOverlay from './components/TutorialOverlay';
 
-const App: React.FC = () => {
-    const params = new URLSearchParams(window.location.search);
-    const scenarioKey = params.get('scenario') || 'tutorial_agg';
-    const config: ScenarioConfig = scenarios[scenarioKey] || scenarios.tutorial_agg;
-    const [html, setHtml] = useState<string>('');
+const scenarios: Record<string, string> = {
+    gas: '/gas-properties/index.html',
+    tutorial_gas: '/gas-properties/index.html'
+};
+
+const App = () => {
+    const [scenario, setScenario] = useState('tutorial_gas');
+    const [isTutorial, setIsTutorial] = useState(false);
 
     useEffect(() => {
-        fetch(`${config.sim}index.html`)
-            .then(res => res.text())
-            .then(htmlText => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
-                const bodyContent = doc.body.innerHTML;
-                setHtml(bodyContent);
-            })
-            .catch(e => {
-                setHtml(`<p style="color:red">Failed to load simulation: ${e.message}</p>`);
-            });
-    }, [config.sim]);
+        const p = new URLSearchParams(window.location.search);
+        const s = p.get('scenario') || 'tutorial_gas';
+        setScenario(s);
+        setIsTutorial(s.startsWith('tutorial_'));
+    }, []);
 
-    const finishTutorial = () => {
-        if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
-        window.location.href = config.redirect || '/';
+    const handleFinishTutorial = () => {
+        window.location.href = '/?scenario=gas';
     };
 
     return (
-        <div className={`app-container ${config.form ? '' : 'full-sim'}`}>
-            {config.form && <GoogleForm src={config.form} />}
-            <SimulationLoader html={html} />
-            {scenarioKey.startsWith('tutorial') && <TutorialOverlay onFinish={finishTutorial} />}
+        <div>
+            {isTutorial && (
+                <div style={styles.overlay}>
+                    <div>
+                        <strong>Tutorial Mode</strong>
+                        <br />
+                        <button onClick={handleFinishTutorial} style={styles.button}>
+                            Finish Tutorial
+                        </button>
+                    </div>
+                </div>
+            )}
+            <SimulationLoader path={scenarios[scenario] || scenarios['tutorial_gas']!} />
         </div>
     );
+};
+
+const styles = {
+    overlay: {
+        position: 'fixed' as const,
+        top: '20px',
+        left: '20px',
+        zIndex: 999,
+        background: '#fff',
+        padding: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+    },
+    button: {
+        marginTop: '8px',
+        padding: '6px 12px',
+        fontSize: '14px',
+    },
 };
 
 export default App;
