@@ -145,14 +145,14 @@
     const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
 
-    // Hide form in tutorial mode
+    // Show/hide form panel
     if (config.form) {
         formFrame.src = config.form;
     } else {
         layout.classList.add('full-width');
     }
 
-    // Load simulation HTML directly into the DOM
+    // Fetch and inject simulation HTML
     const simPath = config.sim + 'index.html' + (config.locale ? `?locale=${config.locale}` : '');
     console.log('[App] Fetching sim from:', simPath);
 
@@ -163,7 +163,16 @@
         })
         .then(html => {
             simContainer.innerHTML = html;
-            console.log('[App] Sim loaded successfully');
+
+            // Force execution of inline scripts
+            simContainer.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.textContent = oldScript.textContent;
+                oldScript.replaceWith(newScript);
+            });
+
+            console.log('[App] Sim loaded and scripts executed');
             window.reSdk?.startNextExposure?.();
         })
         .catch(err => {
@@ -171,7 +180,7 @@
             console.error('[App] Failed to load sim:', err);
         });
 
-    // Handle tutorial overlay
+    // Tutorial mode UI
     if (selected.startsWith('tutorial_')) {
         console.log('[App] Tutorial mode activated');
         const tutorialInfo = document.getElementById('tutorialInfo');
@@ -185,7 +194,7 @@
         setTimeout(() => {
             console.log('[App] Tutorial auto-redirect triggered');
             window.location.href = config.redirect;
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5 * 60 * 1000); // 5 min
     }
 
     // Fullscreen button
@@ -195,7 +204,7 @@
         requestFullscreen?.call(elem);
     });
 
-    // End eye-tracking test
+    // End test button
     document.getElementById('endTestBtn').addEventListener('click', () => {
         console.log('[App] Test end triggered via button');
         window.reSdk?.finishEyeTrackingTest?.();
