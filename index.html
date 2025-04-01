@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PhET Simulation + Google Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .toolbar {
+            padding: 8px;
+            background: #f1f3f5;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        .toolbar button {
+            padding: 8px 14px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            height: 100%;
+        }
+        .left-panel {
+            width: 25%;
+            border-right: 1px solid #ccc;
+        }
+        .right-panel {
+            width: 75%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .full-width .left-panel {
+            display: none;
+        }
+        .full-width .right-panel {
+            width: 100%;
+        }
+    </style>
+
+    <!-- RealEye SDK -->
+    <script type="module">
+        import EmbeddedPageSdk from "https://app.realeye.io/sdk/js/testRunnerEmbeddableSdk-1.7.1.js";
+        window.addEventListener("DOMContentLoaded", () => {
+            window.reSdk = new EmbeddedPageSdk(false, null, false);
+        });
+    </script>
+</head>
+<body>
+<div class="toolbar">
+    <button id="fullscreenBtn" data-re-aoi-name="Fullscreen Button">Full Screen</button>
+    <button id="endTestBtn" data-re-aoi-name="End Test Button">End Test</button>
+</div>
+
+<div class="container" id="layout">
+    <div class="left-panel">
+        <iframe id="googleForm" title="Google Form" data-re-aoi-name="Google Form"></iframe>
+    </div>
+    <div class="right-panel">
+        <iframe id="phetSim" title="PhET Simulation" allowfullscreen data-re-aoi-name="Simulation"></iframe>
+    </div>
+</div>
+
+<script>
+    const scenarios = {
+        agg: {
+            form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
+            sim:  '/states-of-matter-basics/'
+        },
+        gas: {
+            form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
+            sim:  '/gas-properties/'
+        },
+        tutorial_agg: {
+            form: null,
+            sim: '/states-of-matter-basics/?locale=de',
+            redirect: '/?scenario=agg'
+        },
+        tutorial_gas: {
+            form: null,
+            sim: '/gas-properties/?locale=de',
+            redirect: '/?scenario=gas'
+        }
+    };
+
+    const params = new URLSearchParams(location.search);
+    const selected = params.get('scenario') || 'tutorial_agg';
+    const config = scenarios[selected] || scenarios.tutorial_agg;
+
+    const formFrame = document.getElementById('googleForm');
+    const simFrame = document.getElementById('phetSim');
+    const layout = document.getElementById('layout');
+
+    simFrame.src = config.sim;
+
+    if (config.form) {
+        formFrame.src = config.form;
+    } else {
+        layout.classList.add('full-width');
+    }
+
+    // Fullscreen
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        const elem = document.documentElement;
+        const requestFullScreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+        if (requestFullScreen) requestFullScreen.call(elem);
+    });
+
+    // End test button
+    document.getElementById('endTestBtn').addEventListener('click', () => {
+        if (window.reSdk) reSdk.finishEyeTrackingTest?.();
+        if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
+    });
+
+    // Auto-finish test when tab closes or hidden
+    window.addEventListener("beforeunload", () => {
+        if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
+        }
+    });
+
+    // Redirect after tutorial timeout
+    if (selected.startsWith('tutorial_') && config.redirect) {
+        setTimeout(() => {
+            window.location.href = config.redirect;
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+</script>
+</body>
+</html>
