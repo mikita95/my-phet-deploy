@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './app.css';
 import SimulationLoader from './components/SimulationLoader';
 
 const scenarios: Record<string, string> = {
@@ -24,37 +25,15 @@ const App = () => {
     return (
         <div>
             {isTutorial && (
-                <div style={styles.overlay}>
-                    <div>
-                        <strong>Tutorial Mode</strong>
-                        <br />
-                        <button onClick={handleFinishTutorial} style={styles.button}>
-                            Finish Tutorial
-                        </button>
-                    </div>
+                <div className="tutorial-overlay">
+                    <strong>Tutorial Mode</strong>
+                    <p>Explore the simulation, then click when ready.</p>
+                    <button onClick={handleFinishTutorial}>Finish Tutorial</button>
                 </div>
             )}
             <SimulationLoader path={scenarios[scenario] || scenarios['tutorial_gas']!} />
         </div>
     );
-};
-
-const styles = {
-    overlay: {
-        position: 'fixed' as const,
-        top: '20px',
-        left: '20px',
-        zIndex: 999,
-        background: '#fff',
-        padding: '10px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-    },
-    button: {
-        marginTop: '8px',
-        padding: '6px 12px',
-        fontSize: '14px',
-    },
 };
 
 export default App;
