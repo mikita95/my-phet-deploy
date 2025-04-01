@@ -36,9 +36,12 @@ const App = () => {
 
     useEffect(() => {
         const s = new URLSearchParams(location.search).get('scenario') || 'tutorial_gas';
+        console.log('[App] Selected scenario:', s);
+        console.log('[App] Config:', scenarios[s]);
         setScenario(s);
-        setConfig(scenarios[s] || scenarios['tutorial_gas']);
+        setConfig(scenarios[s]);
     }, []);
+
 
     const handleFinishTutorial = () => {
         if (config.redirect) {
