@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SimulationLoader from './components/SimulationLoader';
-import './App.css';
+import './app.css';
 
 interface ScenarioConfig {
     sim: string;
