@@ -35,6 +35,7 @@
         .container {
             flex: 1;
             display: flex;
+            position: relative;
         }
         .left-panel {
             width: 25%;
@@ -42,7 +43,6 @@
         }
         .right-panel {
             width: 75%;
-            position: relative;
             overflow: auto;
         }
         .full-width .left-panel {
@@ -101,11 +101,12 @@
         <iframe id="googleForm" title="Google Form" data-re-aoi-name="Google Form"></iframe>
     </div>
     <div class="right-panel" id="simContainer" data-re-aoi-name="Simulation">
-        <div id="tutorialInfo">
-            <strong>Tutorial Mode</strong> – Explore the simulation.
-            <br />
-            <button id="finishTutorialButton">Finish Tutorial</button>
-        </div>
+        <p style="padding:1rem;">Loading simulation…</p>
+    </div>
+    <div id="tutorialInfo">
+        <strong>Tutorial Mode</strong> – Explore the simulation.
+        <br />
+        <button id="finishTutorialButton">Finish Tutorial</button>
     </div>
 </div>
 
@@ -137,20 +138,24 @@
     const selected = params.get('scenario') || 'tutorial_agg';
     const config = scenarios[selected] || scenarios.tutorial_agg;
 
+    console.log('[App] Selected scenario:', selected);
+    console.log('[App] Config:', config);
+
     const formFrame = document.getElementById('googleForm');
     const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
 
-    // Show/hide form
+    // Hide form in tutorial mode
     if (config.form) {
         formFrame.src = config.form;
     } else {
         layout.classList.add('full-width');
     }
 
-    // Load sim HTML directly (not in iframe)
+    // Load simulation HTML directly into the DOM
     const simPath = config.sim + 'index.html' + (config.locale ? `?locale=${config.locale}` : '');
-    simContainer.innerHTML += '<p style="padding:1rem;">Loading simulation…</p>';
+    console.log('[App] Fetching sim from:', simPath);
+
     fetch(simPath)
         .then(res => {
             if (!res.ok) throw new Error('Sim not found');
@@ -158,46 +163,53 @@
         })
         .then(html => {
             simContainer.innerHTML = html;
+            console.log('[App] Sim loaded successfully');
             window.reSdk?.startNextExposure?.();
         })
         .catch(err => {
             simContainer.innerHTML = `<p style="padding:1rem; color: red;">Failed to load simulation: ${err.message}</p>`;
+            console.error('[App] Failed to load sim:', err);
         });
 
-    // Tutorial overlay logic
+    // Handle tutorial overlay
     if (selected.startsWith('tutorial_')) {
+        console.log('[App] Tutorial mode activated');
         const tutorialInfo = document.getElementById('tutorialInfo');
         tutorialInfo.style.display = 'block';
 
         document.getElementById('finishTutorialButton').addEventListener('click', () => {
+            console.log('[App] Tutorial finished manually');
             window.location.href = config.redirect;
         });
 
         setTimeout(() => {
+            console.log('[App] Tutorial auto-redirect triggered');
             window.location.href = config.redirect;
         }, 5 * 60 * 1000); // 5 minutes
     }
 
-    // Fullscreen
+    // Fullscreen button
     document.getElementById('fullscreenBtn').addEventListener('click', () => {
         const elem = document.documentElement;
         const requestFullscreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
         requestFullscreen?.call(elem);
     });
 
-    // End test
+    // End eye-tracking test
     document.getElementById('endTestBtn').addEventListener('click', () => {
+        console.log('[App] Test end triggered via button');
         window.reSdk?.finishEyeTrackingTest?.();
         window.opener?.postMessage('re-test-end-without-interaction', '*');
     });
 
-    // Auto-finish on tab close/hidden
     window.addEventListener('beforeunload', () => {
+        console.log('[App] Test end triggered via unload');
         window.opener?.postMessage('re-test-end-without-interaction', '*');
     });
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
+            console.log('[App] Test end triggered via visibility change');
             window.opener?.postMessage('re-test-end-without-interaction', '*');
         }
     });
