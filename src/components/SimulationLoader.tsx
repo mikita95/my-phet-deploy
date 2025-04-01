@@ -9,26 +9,32 @@ const SimulationLoader: React.FC<Props> = ({ path }) => {
 
     useEffect(() => {
         const load = async () => {
-            if (!ref.current) return;
+            if (!ref.current || !path) return;
+            console.log('[SimLoader] Fetching:', path);
 
-            const res = await fetch(path);
-            const html = await res.text();
+            try {
+                const res = await fetch(path);
+                const html = await res.text();
+                ref.current.innerHTML = html;
 
-            ref.current.innerHTML = html;
+                ref.current.querySelectorAll('script').forEach((oldScript) => {
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach((attr) =>
+                        newScript.setAttribute(attr.name, attr.value)
+                    );
+                    newScript.text = oldScript.textContent || '';
+                    oldScript.replaceWith(newScript);
+                });
 
-            const scripts = ref.current.querySelectorAll('script');
-            scripts.forEach((script) => {
-                const newScript = document.createElement('script');
-                Array.from(script.attributes).forEach((attr) =>
-                    newScript.setAttribute(attr.name, attr.value)
-                );
-                newScript.text = script.textContent || '';
-                script.replaceWith(newScript);
-            });
+                console.log('[SimLoader] Sim loaded into DOM.');
+            } catch (err) {
+                console.error('[SimLoader] Failed to load sim:', err);
+            }
         };
 
         load();
     }, [path]);
+
 
     return <div id="sim-container" ref={ref} />;
 };
