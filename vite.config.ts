@@ -1,12 +1,16 @@
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
     plugins: [react()],
+    root: '.', // default, but makes structure clear
+    publicDir: 'public', // default, just being explicit
     build: {
-        outDir: 'dist', // default, just to be sure
+        outDir: 'dist',
+        emptyOutDir: true,
         rollupOptions: {
-            input: 'index.html' // ✅ tell Vite to use HTML as entry point
+            input: path.resolve(__dirname, 'public/index.html') // ✅ use the correct full path
         }
     }
 });
