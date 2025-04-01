@@ -1,11 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "vite.config.ts",
-      "use": "@vercel/vite"
-    }
-  ],
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
   "routes": [
     {
       "src": "/states-of-matter-basics(/.*)?",
