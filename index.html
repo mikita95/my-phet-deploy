@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PhET Simulation + Google Form</title>
+    <title>PhET + Google Form</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
     <style>
         * { box-sizing: border-box; }
         html, body {
             margin: 0;
-            padding: 0;
             font-family: 'Roboto', sans-serif;
             height: 100vh;
             overflow: hidden;
@@ -62,22 +61,6 @@
             height: 100%;
         }
 
-        /* Overlay styling */
-        #tutorialInfo {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #e0f7fa;
-            color: #00695c;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 10000;
-            display: none;
-            text-align: center;
-            pointer-events: auto;
-        }
         #tutorialInfo {
             position: absolute;
             top: 10px;
@@ -89,15 +72,22 @@
             border-radius: 5px;
             font-size: 14px;
             z-index: 9999;
-            pointer-events: auto; /* <- key fix */
+            display: none;
+            text-align: center;
+            pointer-events: auto;
+        }
+        #tutorialInfo button {
+            margin-top: 8px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
         }
 
-        #simContainer {
-            pointer-events: none !important; /* <- blocks sim clicks, allows overlay */
-        }
-
-        /* Ensure overlay stays clickable during tutorial */
-        .tutorial-mode #simContainer canvas {
+        #simContent {
             pointer-events: none;
         }
     </style>
@@ -136,11 +126,11 @@
     const scenarios = {
         agg: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
-            sim:  '/states-of-matter-basics/',
+            sim:  '/states-of-matter-basics/'
         },
         gas: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
-            sim:  '/gas-properties/',
+            sim:  '/gas-properties/'
         },
         tutorial_agg: {
             form: null,
@@ -167,14 +157,12 @@
     const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
 
-    // Show or hide Google Form
     if (config.form) {
         formFrame.src = config.form;
     } else {
         layout.classList.add('full-width');
     }
 
-    // Fetch and inject only <body> of sim
     const simPath = config.sim + 'index.html' + (config.locale ? `?locale=${config.locale}` : '');
     console.log('[App] Fetching sim from:', simPath);
 
@@ -184,16 +172,14 @@
             const bodyMatch = html.match(/<body[^>]*>((.|[\n\r])*)<\/body>/im);
             const bodyContent = bodyMatch ? bodyMatch[1] : html;
 
-            // Wrap sim in a container that disables pointer events
             const wrapper = document.createElement('div');
             wrapper.innerHTML = bodyContent;
-            wrapper.style.pointerEvents = 'none'; // disables all interaction on sim
             wrapper.id = 'simContent';
+            wrapper.style.pointerEvents = 'none';
 
             simContainer.innerHTML = '';
             simContainer.appendChild(wrapper);
 
-            // Execute scripts inside the wrapper
             wrapper.querySelectorAll('script').forEach(oldScript => {
                 const newScript = document.createElement('script');
                 [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
@@ -201,28 +187,23 @@
                 oldScript.replaceWith(newScript);
             });
 
-            console.log('[App] Sim injected into wrapper, pointer-events disabled');
+            console.log('[App] Sim loaded and scripts executed');
             window.reSdk?.startNextExposure?.();
+            setupTutorial(); // ← run tutorial logic
         })
-    .catch(err => {
-            simContainer.innerHTML = `<p style="padding:1rem; color: red;">Failed to load simulation: ${err.message}</p>`;
-            console.error('[App] Failed to load sim:', err);
+        .catch(err => {
+            console.error('[App] Failed to load simulation:', err);
+            simContainer.innerHTML = `<p style="padding:1rem; color:red;">Failed to load simulation: ${err.message}</p>`;
         });
 
-    // Tutorial overlay
-    if (selected.startsWith('tutorial_')) {
+    function setupTutorial() {
+        if (!selected.startsWith('tutorial_')) return;
+
         document.body.classList.add('tutorial-mode');
-
-        // Show the tutorial overlay
         const tutorialInfo = document.getElementById('tutorialInfo');
-        if (tutorialInfo) {
-            tutorialInfo.style.display = 'block';
-            console.log('[App] Tutorial mode activated, overlay shown');
-        } else {
-            console.warn('[App] tutorialInfo element not found');
-        }
+        tutorialInfo.style.display = 'block';
+        console.log('[App] Tutorial mode activated');
 
-        // Attach click listener for "Finish Tutorial"
         setTimeout(() => {
             const finishButton = document.getElementById('finishTutorialButton');
             if (finishButton) {
@@ -231,18 +212,14 @@
                     window.location.href = config.redirect;
                 });
                 console.log('[App] Finish button listener attached');
-            } else {
-                console.warn('[App] Finish button not found');
             }
-        }, 100); // slight delay ensures DOM is fully ready
+        }, 100);
 
-        // Auto redirect after 5 minutes
         setTimeout(() => {
             console.log('[App] Tutorial auto-redirect triggered');
             window.location.href = config.redirect;
         }, 5 * 60 * 1000);
     }
-
 
     // Fullscreen
     document.getElementById('fullscreenBtn').addEventListener('click', () => {
@@ -251,7 +228,7 @@
         requestFullscreen?.call(elem);
     });
 
-    // End test button
+    // End test
     document.getElementById('endTestBtn').addEventListener('click', () => {
         console.log('[App] Test end triggered via button');
         window.reSdk?.finishEyeTrackingTest?.();
