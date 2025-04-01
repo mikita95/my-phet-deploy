@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import SimulationLoader from './components/SimulationLoader';
-import './app.css';
 
 export interface ScenarioConfig {
     sim: string;
@@ -31,71 +30,53 @@ const scenarios: Record<string, ScenarioConfig> = {
 };
 
 const App: React.FC = () => {
-    const [scenario, setScenario] = useState<string>('tutorial_gas');
     const [config, setConfig] = useState<ScenarioConfig | null>(null);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const s = params.get('scenario') || 'tutorial_gas';
-        const selectedConfig = scenarios[s] || scenarios['tutorial_gas'];
+        const params = new URLSearchParams(location.search);
+        const scenario = params.get('scenario') || 'tutorial_gas';
+        const selected = scenarios[scenario] || scenarios['tutorial_gas'];
+        setConfig(selected);
 
-        console.log('[App] Selected scenario:', s);
-        console.log('[App] Config:', selectedConfig);
-
-        setScenario(s);
-        setConfig(selectedConfig);
-
-        // Auto redirect after 5 mins (only in tutorial mode)
-        if (s.startsWith('tutorial_') && selectedConfig.redirect) {
+        if (scenario.startsWith('tutorial_') && selected.redirect) {
             setTimeout(() => {
-                console.log('[App] Auto redirecting after tutorial timeout...');
-                window.location.href = selectedConfig.redirect!;
+                window.location.href = selected.redirect!;
             }, 5 * 60 * 1000);
         }
     }, []);
 
-    const handleFinishTutorial = () => {
-        console.log('[App] Finish tutorial clicked');
+    const handleFinish = () => {
         if (config?.redirect) {
-            console.log('[App] Redirecting to', config.redirect);
             window.location.href = config.redirect;
-        } else {
-            console.warn('[App] No redirect set in config');
         }
     };
 
-    if (!config) return <p>Loading config...</p>;
+    if (!config) return <p>Loading...</p>;
 
     const simPath = `${config.sim}index.html${config.locale ? `?locale=${config.locale}` : ''}`;
 
     return (
-        <div className={`app ${!config.form ? 'tutorial-mode' : ''}`}>
+        <div className="app">
             <div className="toolbar">
                 <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
                 <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>End Test</button>
             </div>
 
-            {config.form ? (
-                <div className="container">
-                    <div className="left-panel">
-                        <iframe src={config.form} title="Google Form" />
-                    </div>
-                    <div className="right-panel">
-                        <SimulationLoader path={simPath} />
-                    </div>
-                </div>
-            ) : (
-                <div className="container full-width">
-                    <div className="right-panel">
-                        <div className="tutorial-overlay" id="tutorialInfo">
-                            <strong>Tutorial Mode</strong> – Explore the simulation.
-                            <br />
-                            <button onClick={handleFinishTutorial}>Finish Tutorial</button>
-                        </div>
-                        <SimulationLoader path={simPath} />
-                    </div>
+            {config.form && (
+                <div className="form-panel">
+                    <iframe src={config.form} title="Google Form" />
                 </div>
             )}
+
+            {!config.form && (
+                <div className="tutorial-info">
+                    <strong>Tutorial Mode</strong> – Explore the simulation.
+                    <br />
+                    <button onClick={handleFinish}>Finish Tutorial</button>
+                </div>
+            )}
+
+            <SimulationLoader path={simPath} />
         </div>
     );
 };
