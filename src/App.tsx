@@ -12,21 +12,23 @@ export interface ScenarioConfig {
 const scenarios: Record<string, ScenarioConfig> = {
     agg: {
         sim: '/states-of-matter-basics/',
-        form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true'
+        form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
     },
     gas: {
         sim: '/gas-properties/',
-        form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true'
+        form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
     },
     tutorial_agg: {
         sim: '/states-of-matter-basics/',
         form: null,
-        redirect: '/?scenario=agg'
+        redirect: '/?scenario=agg',
+        locale: 'de',
     },
     tutorial_gas: {
         sim: '/gas-properties/',
         form: null,
-        redirect: '/?scenario=gas'
+        redirect: '/?scenario=gas',
+        locale: 'de',
     }
 };
 
@@ -37,7 +39,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const s = params.get('scenario') || 'tutorial_gas';
-        const selectedConfig = scenarios[s] || scenarios['tutorial_gas'];
+        const selectedConfig = scenarios[s] || scenarios.tutorial_gas;
 
         console.log('[App] Selected scenario:', s);
         console.log('[App] Config:', selectedConfig);
@@ -45,28 +47,45 @@ const App: React.FC = () => {
         setScenario(s);
         setConfig(selectedConfig);
 
-        // Auto redirect after 5 mins (only in tutorial mode)
+        // Auto-end test on unload or tab hidden
+        const endTest = () => {
+            window.opener?.postMessage('re-test-end-without-interaction', '*');
+            console.log('[App] Test end triggered');
+        };
+
+        window.addEventListener('beforeunload', endTest);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') endTest();
+        });
+
+        // Auto redirect after 5 mins in tutorial
         if (s.startsWith('tutorial_') && selectedConfig.redirect) {
-            setTimeout(() => {
-                console.log('[App] Redirecting after tutorial...');
+            const timeout = setTimeout(() => {
+                console.log('[App] Redirecting after tutorial timeout');
                 window.location.href = selectedConfig.redirect!;
             }, 5 * 60 * 1000);
+            return () => clearTimeout(timeout);
         }
+
+        return () => {
+            window.removeEventListener('beforeunload', endTest);
+        };
     }, []);
 
     const handleFinishTutorial = () => {
+        console.log('[App] Finish Tutorial → Redirect');
         if (config?.redirect) {
-            console.log('[App] Manual finish tutorial → redirecting');
             window.location.href = config.redirect;
         }
     };
 
-    if (!config) return <p>Loading config...</p>;
+    if (!config) return <p>Loading...</p>;
 
     const simPath = `${config.sim}index.html${config.locale ? `?locale=${config.locale}` : ''}`;
+    const isTutorial = !config.form;
 
     return (
-        <div className={`app ${!config.form ? 'tutorial-mode' : ''}`}>
+        <div className={`app ${isTutorial ? 'tutorial-mode' : ''}`}>
             <div className="toolbar">
                 <button onClick={() => document.documentElement.requestFullscreen()}>
                     Full Screen
@@ -76,19 +95,16 @@ const App: React.FC = () => {
                 </button>
             </div>
 
-            {config.form ? (
-                <div className="container">
+            <div className={`container ${isTutorial ? 'full-width' : ''}`}>
+                {!isTutorial && (
                     <div className="left-panel">
-                        <iframe src={config.form} title="Google Form" />
+                        <iframe src={config.form!} title="Google Form" />
                     </div>
-                    <div className="right-panel">
-                        <SimulationLoader path={simPath} />
-                    </div>
-                </div>
-            ) : (
-                <div className="container full-width">
-                    <div className="right-panel">
-                        <SimulationLoader path={simPath} />
+                )}
+                <div className="right-panel">
+                    <SimulationLoader path={simPath} />
+
+                    {isTutorial && (
                         <div id="tutorialInfo">
                             <strong>Tutorial Mode</strong> – Explore the simulation.
                             <br />
@@ -96,9 +112,9 @@ const App: React.FC = () => {
                                 Finish Tutorial
                             </button>
                         </div>
-                    </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 };
