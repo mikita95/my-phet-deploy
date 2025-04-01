@@ -7,13 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
     <style>
         * { box-sizing: border-box; }
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
             font-family: 'Roboto', sans-serif;
             height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
         .toolbar {
             padding: 8px;
@@ -34,7 +35,6 @@
         .container {
             flex: 1;
             display: flex;
-            height: 100%;
         }
         .left-panel {
             width: 25%;
@@ -42,17 +42,43 @@
         }
         .right-panel {
             width: 75%;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+            position: relative;
+            overflow: auto;
         }
         .full-width .left-panel {
             display: none;
         }
         .full-width .right-panel {
             width: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #tutorialInfo {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e0f7fa;
+            color: #00695c;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+        #tutorialInfo button {
+            margin-top: 8px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
         }
     </style>
 
@@ -74,8 +100,12 @@
     <div class="left-panel">
         <iframe id="googleForm" title="Google Form" data-re-aoi-name="Google Form"></iframe>
     </div>
-    <div class="right-panel">
-        <iframe id="phetSim" title="PhET Simulation" allowfullscreen data-re-aoi-name="Simulation"></iframe>
+    <div class="right-panel" id="simContainer" data-re-aoi-name="Simulation">
+        <div id="tutorialInfo">
+            <strong>Tutorial Mode</strong> – Explore the simulation.
+            <br />
+            <button id="finishTutorialButton">Finish Tutorial</button>
+        </div>
     </div>
 </div>
 
@@ -83,11 +113,11 @@
     const scenarios = {
         agg: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
-            sim:  '/states-of-matter-basics/'
+            sim:  '/states-of-matter-basics/',
         },
         gas: {
             form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
-            sim:  '/gas-properties/'
+            sim:  '/gas-properties/',
         },
         tutorial_agg: {
             form: null,
@@ -101,52 +131,66 @@
         }
     };
 
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(window.location.search);
     const selected = params.get('scenario') || 'tutorial_agg';
     const config = scenarios[selected] || scenarios.tutorial_agg;
 
     const formFrame = document.getElementById('googleForm');
-    const simFrame = document.getElementById('phetSim');
+    const simContainer = document.getElementById('simContainer');
     const layout = document.getElementById('layout');
 
-    simFrame.src = config.sim;
-
+    // Show form if present
     if (config.form) {
         formFrame.src = config.form;
     } else {
         layout.classList.add('full-width');
     }
 
-    // Fullscreen
-    document.getElementById('fullscreenBtn').addEventListener('click', () => {
-        const elem = document.documentElement;
-        const requestFullScreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
-        if (requestFullScreen) requestFullScreen.call(elem);
-    });
+    // Load sim directly (no iframe)
+    simContainer.innerHTML += '<p style="padding:1rem;">Loading simulation…</p>';
+    fetch(config.sim + 'index.html')
+        .then(res => res.text())
+        .then(html => {
+            simContainer.innerHTML = html;
+            if (window.reSdk) window.reSdk.startNextExposure?.();
+        });
 
-    // End test button
-    document.getElementById('endTestBtn').addEventListener('click', () => {
-        if (window.reSdk) reSdk.finishEyeTrackingTest?.();
-        if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
-    });
+    // Tutorial overlay logic
+    if (selected.startsWith('tutorial_')) {
+        const tutorialInfo = document.getElementById('tutorialInfo');
+        tutorialInfo.style.display = 'block';
 
-    // Auto-finish test when tab closes or hidden
-    window.addEventListener("beforeunload", () => {
-        if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
-    });
+        document.getElementById('finishTutorialButton').addEventListener('click', () => {
+            window.location.href = config.redirect;
+        });
 
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") {
-            if (window.opener) window.opener.postMessage('re-test-end-without-interaction', '*');
-        }
-    });
-
-    // Redirect after tutorial timeout
-    if (selected.startsWith('tutorial_') && config.redirect) {
         setTimeout(() => {
             window.location.href = config.redirect;
         }, 5 * 60 * 1000); // 5 minutes
     }
+
+    // Fullscreen
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        const elem = document.documentElement;
+        const requestFullscreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+        requestFullscreen?.call(elem);
+    });
+
+    // Eye-tracking: finish
+    document.getElementById('endTestBtn').addEventListener('click', () => {
+        window.reSdk?.finishEyeTrackingTest?.();
+        window.opener?.postMessage('re-test-end-without-interaction', '*');
+    });
+
+    window.addEventListener('beforeunload', () => {
+        window.opener?.postMessage('re-test-end-without-interaction', '*');
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            window.opener?.postMessage('re-test-end-without-interaction', '*');
+        }
+    });
 </script>
 </body>
 </html>
