@@ -72,42 +72,36 @@ const App: React.FC = () => {
 
     return (
         <div className={`app ${!config.form ? 'tutorial-mode' : ''}`}>
-            {/* Fixed overlay bar always rendered */}
-            {!config.form && (
-                <div className="tutorial-bar">
-                    <strong>Tutorial Mode:</strong> Explore the simulation.
-                    <br />
-                    <button onClick={handleFinishTutorial}>Finish Tutorial</button>
+            <div className="toolbar">
+                <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
+                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>End Test</button>
+            </div>
+
+            {config.form ? (
+                <div className="container">
+                    <div className="left-panel">
+                        <iframe className="form-frame" src={config.form} title="Google Form" />
+                    </div>
+                    <div className="right-panel">
+                        <SimulationLoader path={simPath} />
+                    </div>
+                </div>
+            ) : (
+                <div className="container full-width">
+                    <div className="right-panel">
+                        <SimulationLoader path={simPath} />
+                    </div>
                 </div>
             )}
 
-            <div className="toolbar">
-                <button onClick={() => document.documentElement.requestFullscreen()}>
-                    Full Screen
-                </button>
-                <button
-                    onClick={() =>
-                        window.opener?.postMessage('re-test-end-without-interaction', '*')
-                    }
-                >
-                    End Test
-                </button>
-            </div>
-
-            <div className="container">
-                {config.form && (
-                    <div className="left-panel">
-                        <iframe src={config.form} title="Google Form" />
-                    </div>
+            {/* Tutorial bar always mounted if in tutorial mode */}
+            {!config.form &&
+                ReactDOM.createPortal(
+                    <TutorialBar onFinish={handleFinishTutorial} />,
+                    document.getElementById('tutorial-bar-root')!
                 )}
-
-                <div className="right-panel">
-                    <SimulationLoader path={simPath} />
-                </div>
-            </div>
         </div>
     );
-
 };
 
 export default App;
