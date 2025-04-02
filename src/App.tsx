@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import SimulationLoader from './components/SimulationLoader';
 import './app.css';
-import ReactDOM from 'react-dom';
+import TutorialBar from "./components/TutorialBar";
 
 export interface ScenarioConfig {
     sim: string;
@@ -30,49 +30,6 @@ const scenarios: Record<string, ScenarioConfig> = {
         redirect: '/?scenario=gas'
     }
 };
-
-interface Props {
-    onFinish: () => void;
-}
-
-const TutorialBar: React.FC<Props> = ({ onFinish }) => {
-    useEffect(() => {
-        console.log('[TutorialBar] Mounted');
-    }, []);
-
-    const bar = (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            background: '#f0f0f0',
-            padding: '10px 20px',
-            zIndex: 9999,
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-            fontFamily: 'sans-serif'
-        }}>
-            <strong style={{ marginRight: '20px' }}>Tutorial Mode</strong>
-            <button onClick={() => {
-                console.log('[TutorialBar] Button clicked');
-                onFinish();
-            }} style={{
-                padding: '6px 12px',
-                background: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer'
-            }}>
-                Finish Tutorial
-            </button>
-        </div>
-    );
-
-    const root = document.getElementById('tutorial-bar-root');
-    return root ? ReactDOM.createPortal(bar, root) : null;
-};
-
 
 const App: React.FC = () => {
     const [scenario, setScenario] = useState<string>('tutorial_gas');
@@ -106,7 +63,7 @@ const App: React.FC = () => {
 
     return (
         <div className="app">
-            {scenario.startsWith('tutorial_') && <TutorialBar onFinish={handleFinishTutorial} />}
+            {scenario.startsWith('tutorial_') && <TutorialBar onFinish={handleFinishTutorial}/>}
 
             <div className="toolbar">
                 <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
@@ -118,11 +75,11 @@ const App: React.FC = () => {
             <div className="app-container">
                 {config.form && (
                     <div className="left-panel">
-                        <iframe className="form-frame" src={config.form} title="Google Form" />
+                        <iframe className="form-frame" src={config.form} title="Google Form"/>
                     </div>
                 )}
                 <div className="right-panel">
-                    <SimulationLoader path={simPath} />
+                    <SimulationLoader path={simPath}/>
                 </div>
             </div>
         </div>
