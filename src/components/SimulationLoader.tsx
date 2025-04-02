@@ -1,9 +1,7 @@
-// src/SimulationLoader.tsx
-
 import React, { useEffect, useRef } from 'react';
 
 interface SimulationLoaderProps {
-    path: string; // simulation HTML path
+    path: string;
 }
 
 const SimulationLoader: React.FC<SimulationLoaderProps> = ({ path }) => {
@@ -12,59 +10,37 @@ const SimulationLoader: React.FC<SimulationLoaderProps> = ({ path }) => {
     useEffect(() => {
         if (!path || !wrapperRef.current) return;
 
-        const container = wrapperRef.current;
-
-        const loadSimulation = async () => {
+        const load = async () => {
             try {
-                console.log('[SimulationLoader] Fetching simulation:', path);
+                const res = await fetch(path);
+                const html = await res.text();
 
-                const response = await fetch(path);
-                const rawHtml = await response.text();
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
 
-                // Create a DOM fragment for safe parsing
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = rawHtml;
+                const simHtml = temp.querySelector('body') || temp;
 
-                // Strip outer <html>, <head>, <body> if present
-                const mainContent = tempDiv.querySelector('body') || tempDiv;
+                wrapperRef.current!.innerHTML = simHtml.innerHTML;
 
-                // Inject HTML
-                container.innerHTML = mainContent.innerHTML;
-
-                // Re-execute all script tags
-                const scripts = container.querySelectorAll('script');
-
-                scripts.forEach((script) => {
+                wrapperRef.current!.querySelectorAll('script').forEach((script) => {
                     const newScript = document.createElement('script');
-                    [...script.attributes].forEach(attr => {
-                        newScript.setAttribute(attr.name, attr.value);
-                    });
+                    [...script.attributes].forEach(attr =>
+                        newScript.setAttribute(attr.name, attr.value)
+                    );
                     newScript.textContent = script.textContent;
                     script.replaceWith(newScript);
                 });
 
-                console.log('[SimulationLoader] Simulation loaded successfully');
-            } catch (error) {
-                console.error('[SimulationLoader] Error loading simulation:', error);
-                container.innerHTML = `<p style="color:red;">Failed to load simulation.</p>`;
+                console.log('[SimLoader] Injected and rehydrated scripts');
+            } catch (err) {
+                console.error('[SimLoader] Failed to load:', err);
             }
         };
 
-        loadSimulation();
+        load();
     }, [path]);
 
-    return (
-        <div
-            id="sim-loader-container"
-            ref={wrapperRef}
-            style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden'
-            }}
-        />
-    );
+    return <div id="sim-wrapper" ref={wrapperRef} style={{ width: '100%', height: '100%' }} />;
 };
 
 export default SimulationLoader;
