@@ -4,6 +4,7 @@
     "module": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "react-jsx",
+    "typeRoots": ["node_modules/@types", "src/types"],
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
