@@ -1,46 +1,37 @@
+// src/components/SimulationLoader.tsx
 import React, { useEffect, useRef } from 'react';
+import postscribe from 'postscribe';
 
-interface SimulationLoaderProps {
+interface Props {
     path: string;
 }
 
-const SimulationLoader: React.FC<SimulationLoaderProps> = ({ path }) => {
-    const wrapperRef = useRef<HTMLDivElement>(null);
+const SimulationLoader: React.FC<Props> = ({ path }) => {
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!path || !wrapperRef.current) return;
+        if (!ref.current) return;
 
-        const load = async () => {
-            try {
-                const res = await fetch(path);
-                const html = await res.text();
-
-                const temp = document.createElement('div');
-                temp.innerHTML = html;
-
-                const simHtml = temp.querySelector('body') || temp;
-
-                wrapperRef.current!.innerHTML = simHtml.innerHTML;
-
-                wrapperRef.current!.querySelectorAll('script').forEach((script) => {
-                    const newScript = document.createElement('script');
-                    [...script.attributes].forEach(attr =>
-                        newScript.setAttribute(attr.name, attr.value)
-                    );
-                    newScript.textContent = script.textContent;
-                    script.replaceWith(newScript);
+        fetch(path)
+            .then(res => res.text())
+            .then(html => {
+                if (!ref.current) return;
+                ref.current.innerHTML = ''; // Clear
+                postscribe(ref.current, html, {
+                    done: () => {
+                        console.log('[SimLoader] Injected and hydrated via postscribe');
+                    },
                 });
-
-                console.log('[SimLoader] Injected and rehydrated scripts');
-            } catch (err) {
-                console.error('[SimLoader] Failed to load:', err);
-            }
-        };
-
-        load();
+            })
+            .catch(err => {
+                console.error('[SimLoader] Error loading sim:', err);
+                if (ref.current) ref.current.innerHTML = `<p style="color:red;">Failed to load simulation.</p>`;
+            });
     }, [path]);
 
-    return <div id="sim-wrapper" ref={wrapperRef} style={{ width: '100%', height: '100%' }} />;
+    return (
+        <div id="sim-container" ref={ref} style={{ width: '100%', height: '100%' }} />
+    );
 };
 
 export default SimulationLoader;
