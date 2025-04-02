@@ -32,3 +32,12 @@
 .tutorial-bar button:hover {
     background-color: #0056b3;
 }
+
+#sim-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+    background: white;
+}
+
