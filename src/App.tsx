@@ -31,14 +31,41 @@ const scenarios: Record<string, ScenarioConfig> = {
     }
 };
 
-const TutorialBar: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
-    return (
-        <div className="tutorial-bar">
-            <strong>Tutorial Mode:</strong> Explore the simulation.
-            <button onClick={onFinish}>Finish Tutorial</button>
+interface Props {
+    onFinish: () => void;
+}
+
+const TutorialBar: React.FC<Props> = ({ onFinish }) => {
+    const bar = (
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            background: '#f0f0f0',
+            padding: '10px 20px',
+            zIndex: 9999,
+            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+            fontFamily: 'sans-serif'
+        }}>
+            <strong style={{ marginRight: '20px' }}>Tutorial Mode</strong>
+            <button onClick={onFinish} style={{
+                padding: '6px 12px',
+                background: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer'
+            }}>
+                Finish Tutorial
+            </button>
         </div>
     );
+
+    const root = document.getElementById('tutorial-bar-root');
+    return root ? ReactDOM.createPortal(bar, root) : null;
 };
+
 
 const App: React.FC = () => {
     const [scenario, setScenario] = useState<string>('tutorial_gas');
@@ -71,35 +98,26 @@ const App: React.FC = () => {
     const simPath = `${config.sim}index.html${config.locale ? `?locale=${config.locale}` : ''}`;
 
     return (
-        <div className={`app ${!config.form ? 'tutorial-mode' : ''}`}>
+        <div className="app">
+            {scenario.startsWith('tutorial_') && <TutorialBar onFinish={handleFinishTutorial} />}
+
             <div className="toolbar">
                 <button onClick={() => document.documentElement.requestFullscreen()}>Full Screen</button>
-                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>End Test</button>
+                <button onClick={() => window.opener?.postMessage('re-test-end-without-interaction', '*')}>
+                    End Test
+                </button>
             </div>
 
-            {config.form ? (
-                <div className="container">
+            <div className="app-container">
+                {config.form && (
                     <div className="left-panel">
                         <iframe className="form-frame" src={config.form} title="Google Form" />
                     </div>
-                    <div className="right-panel">
-                        <SimulationLoader path={simPath} />
-                    </div>
-                </div>
-            ) : (
-                <div className="container full-width">
-                    <div className="right-panel">
-                        <SimulationLoader path={simPath} />
-                    </div>
-                </div>
-            )}
-
-            {/* Tutorial bar always mounted if in tutorial mode */}
-            {!config.form &&
-                ReactDOM.createPortal(
-                    <TutorialBar onFinish={handleFinishTutorial} />,
-                    document.getElementById('tutorial-bar-root')!
                 )}
+                <div className="right-panel">
+                    <SimulationLoader path={simPath} />
+                </div>
+            </div>
         </div>
     );
 };
