@@ -36,6 +36,10 @@ interface Props {
 }
 
 const TutorialBar: React.FC<Props> = ({ onFinish }) => {
+    useEffect(() => {
+        console.log('[TutorialBar] Mounted');
+    }, []);
+
     const bar = (
         <div style={{
             position: 'fixed',
@@ -49,7 +53,10 @@ const TutorialBar: React.FC<Props> = ({ onFinish }) => {
             fontFamily: 'sans-serif'
         }}>
             <strong style={{ marginRight: '20px' }}>Tutorial Mode</strong>
-            <button onClick={onFinish} style={{
+            <button onClick={() => {
+                console.log('[TutorialBar] Button clicked');
+                onFinish();
+            }} style={{
                 padding: '6px 12px',
                 background: '#007bff',
                 color: 'white',
