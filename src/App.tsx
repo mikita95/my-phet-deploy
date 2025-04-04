@@ -5,6 +5,7 @@ interface Scenario {
     sim: string;
     form: string | null;
     redirect?: string;
+    realeyeTest?: string;
 }
 
 const scenarios: Record<string, Scenario> = {
@@ -19,12 +20,12 @@ const scenarios: Record<string, Scenario> = {
     tutorial_agg: {
         sim: '/states-of-matter-basics/',
         form: null,
-        redirect: '/?scenario=agg'
+        redirect: 'https://app.realeye.io/test/fcbfae10-27e6-4a17-b17c-0fa23d5ee6be/run'
     },
     tutorial_gas: {
         sim: '/gas-properties/',
         form: null,
-        redirect: '/?scenario=gas'
+        redirect: 'https://app.realeye.io/test/74d1b04c-53d9-4883-9019-35941a398926/run'
     }
 };
 
@@ -40,14 +41,16 @@ const App: React.FC = () => {
 
     if (!config) return <div>Loading...</div>;
 
+    const handleTutorialFinish = () => {
+        if (config.redirect) {
+            window.location.href = config.redirect;
+        }
+    };
+
     return (
         <div className="app">
             {scenarioKey.startsWith('tutorial_') && (
-                <TutorialBar onFinish={() => {
-                    if (config.redirect) {
-                        window.location.href = config.redirect;
-                    }
-                }} />
+                <TutorialBar onFinish={handleTutorialFinish} />
             )}
             <div className="container">
                 {config.form && (
