@@ -27,6 +27,19 @@ const TutorialBar: React.FC<Props> = ({onFinish}) => {
         };
     }, [onFinish]);
 
+    useEffect(() => {
+        const styleSheet = document.createElement("style");
+        styleSheet.innerHTML = `
+            button:hover {
+                background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%) !important;
+                box-shadow: 0 6px 18px rgba(24, 144, 255, 0.5) !important;
+                transform: scale(1.03);
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        return () => document.head.removeChild(styleSheet);
+    }, []);
+
     const formatTime = (ms: number): string => {
         const totalSeconds = Math.floor(ms / 1000);
         const minutes = Math.floor(totalSeconds / 60);
@@ -74,19 +87,17 @@ const styles = {
         fontVariantNumeric: 'tabular-nums' as const,
     },
     button: {
-        backgroundColor: '#1890ff',
+        background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
         color: '#fff',
-        fontSize: '14px',
-    }
+        fontSize: '15px',
+        fontWeight: 'bold',
+        padding: '10px 20px',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(24, 144, 255, 0.4)',
+        transition: 'all 0.3s ease',
+    },
 }
-
-// Optional: add hover effect via native CSS (if not using CSS-in-JS)
-const styleSheet = document.createElement("style");
-styleSheet.innerHTML = `
-    button:hover {
-        background-color: #40a9ff !important;
-    }
-`;
-document.head.appendChild(styleSheet);
 
 export default TutorialBar;
