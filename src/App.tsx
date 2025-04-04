@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import TutorialBar from './components/TutorialBar';
+import './app.css'
 
 interface Scenario {
     sim: string;

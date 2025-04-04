@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import './app.css'
 
 interface Props {
     onFinish: () => void;
