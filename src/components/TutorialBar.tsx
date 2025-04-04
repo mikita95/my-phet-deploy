@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import './app.css'
 
 interface Props {
     onFinish: () => void;
@@ -12,16 +11,50 @@ const TutorialBar: React.FC<Props> = ({ onFinish }) => {
     }, [onFinish]);
 
     return (
-        <div className="tutorial-bar flex items-center justify-between px-4 py-2 bg-yellow-100 border-b border-yellow-300 shadow-md">
-            <span className="text-gray-800 font-medium">Tutorial Mode – Explore the simulation.</span>
-            <button
-                onClick={onFinish}
-                className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition duration-200"
-            >
+        <div style={styles.bar}>
+            <span style={styles.text}>Tutorial Mode – Explore the simulation.</span>
+            <button style={styles.button} onClick={onFinish}>
                 Finish Tutorial
             </button>
         </div>
     );
 };
+
+const styles = {
+    bar: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 16px',
+        backgroundColor: '#fffbe6',
+        borderBottom: '1px solid #ffe58f',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        fontFamily: 'sans-serif',
+    },
+    text: {
+        fontSize: '16px',
+        color: '#333',
+    },
+    button: {
+        backgroundColor: '#1890ff',
+        color: '#fff',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        padding: '8px 16px',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        transition: 'background-color 0.3s ease',
+    },
+};
+
+// Optional: add hover effect via native CSS (if not using CSS-in-JS)
+const styleSheet = document.createElement("style");
+styleSheet.innerHTML = `
+    button:hover {
+        background-color: #40a9ff !important;
+    }
+`;
+document.head.appendChild(styleSheet);
 
 export default TutorialBar;
